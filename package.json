@@ -1,11 +1,12 @@
 {
-  "name": "node-web-scrape",
+  "name": "satellite-telemetry-api",
   "version": "0.0.1",
-  "description": "Scrape le web.",
-  "main": "server.js",
-  "author": "Scotch",
+  "description": "Where are the satellites?",
+  "main": "app.js",
+  "author": "Cory Grunkemeyer",
   "dependencies": {
     "express": "^4.13.3",
+    "jade": "^1.11.0",
     "request": "^2.63.0"
   }
 }

@@ -1,15 +1,44 @@
+// TO DOs
+// Need to grab the time stamp from Celestrak instead of generating a new one.
+// Need to poll Celestrak less often and cache the data, as it only updates daily
+
 var express = require('express');
-var fs = require('fs');
 var request = require('request');
 
 var app = express();
+var port = process.env.PORT || 5000;
+
+app.set('views', __dirname + '/views');
+app.set('view engine', 'jade');
+app.use(express.static(__dirname + '/public'));
+
+var router = express.Router();
+
 var url = 'http://www.celestrak.com/NORAD/elements/stations.txt';
 var json;
 
-/* TO DOs */
-/* Need to grab the time stamp from Celestrak instead of generating a new one. */
 
-app.get('/', function(req, res){
+// MIDDLEWARE
+// ==============================================
+
+// Route middleware that will happen on every request
+router.use(function(req, res, next) {
+	// Log each request to the console
+	console.log(req.method, req.url);
+
+	next();	
+});
+
+
+// ROUTES
+// ==============================================
+
+router.get('/', function(req, res) {
+  res.render('index', {title : 'Satellite Telemetry JSON API'});
+});
+
+
+router.get('/api', function(req, res) {
 
 	request(url, function(error, response, data) {
 		if(!error){	
@@ -17,36 +46,27 @@ app.get('/', function(req, res){
 			raw = data.replace(/  +/g, ' '); // REMOVE EXTRA SPACES
 			raw = raw.replace(/ \r/g, '');  // NORMALIZE RETURNS
 			raw = raw.split('\n');
-
 			var jsonBegin = '{\n\t"message": "success",\n\t"timestamp": ' + new Date().getTime() + ',\n\t"satellite": [\n';
 			var jsonEnd = '\n\t]\n}';
 
 			for (var i=0; i < raw.length - 1; i+=3) { // SATELLITE NAME
-				//console.log(raw[i]);
 				raw[i] = '\t{\n\t\t"' + raw[i] + '": {\n'; 
 			};
 			for (var i=1; i < raw.length; i+=3) { // LINE 1
-				//console.log(raw[i]);
 				raw[i] = '\t\t\t"line1": "' + raw[i].slice(0, - 1) + '",\n';
 			};
 			for (var i=2; i < raw.length; i+=3) { // LINE 2
-				//console.log(raw[i]);
 				if (raw.length == i + 2) {
 					raw[i] = '\t\t\t"line2": "' + raw[i].slice(0, - 1) + '"\n\t\t}\n\t}';
 				} else {
 					raw[i] = '\t\t\t"line2": "' + raw[i].slice(0, - 1) + '"\n\t\t}\n\t},\n';
 				}
 			};
-
 			raw.unshift(jsonBegin);
 			raw.push(jsonEnd);
 			raw = raw.join('');
 			json = JSON.parse(raw);
-			console.log(json.satellite[0]);
-
-			// fs.writeFile('output.json', raw, function(err){
-			// 	console.log('File successfully written: output.json.');
-			// });
+			console.log(json);
 
 		} else if (error) {
 			console.log(error);
@@ -54,10 +74,16 @@ app.get('/', function(req, res){
 		}
 	})
 
-})
+	res.render('api', {title : 'Satellite Telemetry JSON API Endpoint'});
 
-app.listen('8081')
+});
 
-console.log('Listening on port: 8081');
+app.use('/', router);
 
-exports = module.exports = app;
+
+// START THE SERVER
+// ==============================================
+
+app.listen(port, function() {
+  console.log("Listening on " + port);
+});
