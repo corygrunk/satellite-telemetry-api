@@ -1,6 +1,7 @@
 // TO DOs
 // Need to grab the time stamp from Celestrak instead of generating a new one.
-// Need to poll Celestrak less often and cache the data, as it only updates daily
+// Need to poll Celestrak less often and cache the data, as it only updates daily.
+// Need a better way to terminate the last line. Should check if it's empty first"
 
 var express = require('express');
 var request = require('request');
