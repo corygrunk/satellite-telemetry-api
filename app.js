@@ -5,8 +5,8 @@
 // Add tests
 
 var express = require('express');
+var cheerio = require('cheerio');
 var request = require('request');
-
 var app = express();
 var port = process.env.PORT || 5000;
 
@@ -17,6 +17,7 @@ app.use(express.static(__dirname + '/public'));
 var router = express.Router();
 
 var url = 'http://www.celestrak.com/NORAD/elements/stations.txt';
+var dateUrl = 'http://www.celestrak.com/NORAD/elements/';
 var json;
 
 
@@ -42,8 +43,17 @@ router.get('/', function(req, res) {
 
 router.get('/api', function(req, res) {
 
+	// Get data refresh date
+	request(dateUrl, function(error, response, data) {
+		if(!error) {
+			$ = cheerio.load(data);
+			console.log($('h2').text());
+		}
+	});
+
+	// Get telemetry data
 	request(url, function(error, response, data) {
-		if(!error){	
+		if(!error) {	
 			var raw = data;
 			raw = data.replace(/  +/g, ' '); // REMOVE EXTRA SPACES
 			raw = raw.replace(/ \r/g, '');  // NORMALIZE RETURNS
@@ -68,15 +78,13 @@ router.get('/api', function(req, res) {
 			raw.push(jsonEnd);
 			raw = raw.join('');
 			json = JSON.parse(raw);
-			console.log(json);
-
 		} else if (error) {
 			console.log(error);
 			console.log(response);
 		}
-	})
+	});
 
-	res.json('api', json);
+	res.status(200).json(json); 
 
 });
 
