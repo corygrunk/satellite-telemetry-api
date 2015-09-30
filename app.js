@@ -2,6 +2,7 @@
 // Need to grab the time stamp from Celestrak instead of generating a new one.
 // Need to poll Celestrak less often and cache the data, as it only updates daily.
 // Need a better way to terminate the last line. Should check if it's empty first"
+// Add tests
 
 var express = require('express');
 var request = require('request');
@@ -47,20 +48,20 @@ router.get('/api', function(req, res) {
 			raw = data.replace(/  +/g, ' '); // REMOVE EXTRA SPACES
 			raw = raw.replace(/ \r/g, '');  // NORMALIZE RETURNS
 			raw = raw.split('\n');
-			var jsonBegin = '{\n\t"message": "success",\n\t"timestamp": ' + new Date().getTime() + ',\n\t"satellite": [\n';
-			var jsonEnd = '\n\t]\n}';
+			var jsonBegin = '{\n\t"message": "success",\n\t"timestamp": ' + new Date().getTime() + ',\n\t"satellite": {';
+			var jsonEnd = '\n\t}\n}';
 
 			for (var i=0; i < raw.length - 1; i+=3) { // SATELLITE NAME
-				raw[i] = '\t{\n\t\t"' + raw[i] + '": {\n'; 
+				raw[i] = '\t\n\t\t"' + raw[i] + '": {\n'; 
 			};
 			for (var i=1; i < raw.length; i+=3) { // LINE 1
 				raw[i] = '\t\t\t"line1": "' + raw[i].slice(0, - 1) + '",\n';
 			};
 			for (var i=2; i < raw.length; i+=3) { // LINE 2
 				if (raw.length == i + 2) {
-					raw[i] = '\t\t\t"line2": "' + raw[i].slice(0, - 1) + '"\n\t\t}\n\t}';
+					raw[i] = '\t\t\t"line2": "' + raw[i].slice(0, - 1) + '"\n\t\t}';
 				} else {
-					raw[i] = '\t\t\t"line2": "' + raw[i].slice(0, - 1) + '"\n\t\t}\n\t},\n';
+					raw[i] = '\t\t\t"line2": "' + raw[i].slice(0, - 1) + '"\n\t\t},';
 				}
 			};
 			raw.unshift(jsonBegin);
@@ -75,7 +76,7 @@ router.get('/api', function(req, res) {
 		}
 	})
 
-	res.render('api', {title : 'Satellite Telemetry JSON API Endpoint'});
+	res.json('api', json);
 
 });
 
