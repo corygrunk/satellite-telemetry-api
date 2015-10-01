@@ -1,12 +1,10 @@
 // TO DOs
-// Need to grab the time stamp from Celestrak instead of generating a new one.
 // Need to poll Celestrak less often and cache the data, as it only updates daily.
-// Need a better way to terminate the last line. Should check if it's empty first"
 // Add tests
 
 var express = require('express');
-var cheerio = require('cheerio');
-var request = require('request');
+var Scraper = require('./lib/scraper.js');
+var scraper = new Scraper();
 var app = express();
 var port = process.env.PORT || 5000;
 
@@ -15,10 +13,6 @@ app.set('view engine', 'jade');
 app.use(express.static(__dirname + '/public'));
 
 var router = express.Router();
-
-var url = 'http://www.celestrak.com/NORAD/elements/stations.txt';
-var dateUrl = 'http://www.celestrak.com/NORAD/elements/';
-var json;
 
 
 // MIDDLEWARE
@@ -42,50 +36,9 @@ router.get('/', function(req, res) {
 
 
 router.get('/api', function(req, res) {
-
-	// Get data refresh date
-	request(dateUrl, function(error, response, data) {
-		if(!error) {
-			$ = cheerio.load(data);
-			console.log($('h2').text());
-		}
+	scraper.satellites(function (error, data) {
+		res.status(200).json(data); 
 	});
-
-	// Get telemetry data
-	request(url, function(error, response, data) {
-		if(!error) {	
-			var raw = data;
-			raw = data.replace(/  +/g, ' '); // REMOVE EXTRA SPACES
-			raw = raw.replace(/ \r/g, '');  // NORMALIZE RETURNS
-			raw = raw.split('\n');
-			var jsonBegin = '{\n\t"message": "success",\n\t"timestamp": ' + new Date().getTime() + ',\n\t"satellite": {';
-			var jsonEnd = '\n\t}\n}';
-
-			for (var i=0; i < raw.length - 1; i+=3) { // SATELLITE NAME
-				raw[i] = '\t\n\t\t"' + raw[i] + '": {\n'; 
-			};
-			for (var i=1; i < raw.length; i+=3) { // LINE 1
-				raw[i] = '\t\t\t"line1": "' + raw[i].slice(0, - 1) + '",\n';
-			};
-			for (var i=2; i < raw.length; i+=3) { // LINE 2
-				if (raw.length == i + 2) {
-					raw[i] = '\t\t\t"line2": "' + raw[i].slice(0, - 1) + '"\n\t\t}';
-				} else {
-					raw[i] = '\t\t\t"line2": "' + raw[i].slice(0, - 1) + '"\n\t\t},';
-				}
-			};
-			raw.unshift(jsonBegin);
-			raw.push(jsonEnd);
-			raw = raw.join('');
-			json = JSON.parse(raw);
-		} else if (error) {
-			console.log(error);
-			console.log(response);
-		}
-	});
-
-	res.status(200).json(json); 
-
 });
 
 app.use('/', router);
