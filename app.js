@@ -18,17 +18,17 @@ var pollingInterval = 60; // minutes
 var pollCounter = 0;
 
 // POLL CELESTRAK
-scraper.satellites(function (error, data) {
-	satelliteJson = data;
-	pollCounter = pollCounter + 1;
-	console.log(pollCounter);
-});
-setInterval(function() {
-	scraper.satellites(function (error, data) {
-		satelliteJson = data;
-		pollCounter = pollCounter + 1;
-	});
-}, pollingInterval * 60000); // Poll Celestrak every x minutes
+// scraper.satellites(function (error, data) {
+// 	satelliteJson = data;
+// 	pollCounter = pollCounter + 1;
+// 	console.log(pollCounter);
+// });
+// setInterval(function() {
+// 	scraper.satellites(function (error, data) {
+// 		satelliteJson = data;
+// 		pollCounter = pollCounter + 1;
+// 	});
+// }, pollingInterval * 60000); // Poll Celestrak every x minutes
 
 
 // MIDDLEWARE
@@ -51,7 +51,11 @@ router.get('/', function(req, res) {
 
 
 router.get('/api', function(req, res) {
-	res.status(200).json(satelliteJson); 
+	scraper.satellites(function (error, data) {
+		satelliteJson = data;
+		pollCounter = pollCounter + 1;
+		res.status(200).json(satelliteJson); 
+	});
 });
 
 app.use('/', router);
